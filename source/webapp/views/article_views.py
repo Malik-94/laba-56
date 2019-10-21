@@ -59,9 +59,13 @@ class ArticleSearchView(FormView):
 
     def form_valid(self, form):
         text = form.cleaned_data.get('text')
+        author = form.cleaned_data.get('author')
         query = Q()
         if text:
             query = query & self.get_text_query(form, text)
+        if author:
+            query = query & self.get_author_query(form, author)
+            
         articles = Article.objects.filter(query).distinct()
         context = self.get_context_data()
         context['articles'] = articles
@@ -81,6 +85,16 @@ class ArticleSearchView(FormView):
         in_comment_text = form.cleaned_data.get('in_comment_text')
         if in_comment_text:
             query = query | Q(comments__text__icontains=text)
+        return query
+
+    def get_author_query(self, form, author):
+        query = Q()
+        article_author = form.cleaned_data.get('article_author')
+        if article_author:
+            query = query | Q(author__iexact=author)
+        comment_author = form.cleaned_data.get('comment_author')
+        if comment_author:
+            query = query | Q(comments__author__iexact=author)
         return query
 
 class ArticleView(DetailView):
